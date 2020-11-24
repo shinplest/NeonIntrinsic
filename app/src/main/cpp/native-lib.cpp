@@ -8,8 +8,38 @@ extern "C" JNIEXPORT jstring JNICALL
 Java_com_shinplest_neonintrinsic_MainActivity_stringFromJNI(
         JNIEnv *env,
         jobject /* this */) {
-    std::string hello = "Hello from C++";
-    return env->NewStringUTF(hello.c_str());
+    // Ramp length and number of trials
+    const int rampLength = 1024;
+    const int trials = 10000;
+// Generate two input vectors
+// (0, 1, ..., rampLength - 1)
+// (100, 101, ..., 100 + rampLength-1) auto ramp1 = generateRamp(0, rampLength); auto ramp2 = generateRamp(100, rampLength);
+// Without NEON intrinsics
+// Invoke dotProduct and measure performance
+    int lastResult = 0;
+    auto start = now();
+    for (int i = 0; i < trials; i++) {
+        lastResult = dotProduct(ramp1, ramp2, rampLength);
+        auto elapsedTime = msElapsedTime(start);
+// With NEON intrinsics
+    }
+// Invoke dotProductNeon and measure performance int lastResultNeon = 0;
+    start = now();
+    for (int i = 0; i < trials; i++) {
+        lastResultNeon = dotProductNeon(ramp1, ramp2, rampLength);
+        auto elapsedTimeNeon = msElapsedTime(start);
+
+        // Clean up
+        delete ramp1, ramp2;
+// Display results
+        std::string resultsString =
+                "----==== NO NEON ====----\nResult: " + to_string(lastResult) + "\nElapsed time: " +
+                to_string((int) elapsedTime) + " ms"
+                + "\n\n----==== NEON ====----\n"
+    }
+    +"Result: " + to_string(lastResultNeon)
+    + "\nElapsed time: " + to_string((int) elapsedTimeNeon) + " ms";
+    return env->NewStringUTF(resultsString.c_str());
 }
 
 short *generateRamp(short startValue, short len) {
