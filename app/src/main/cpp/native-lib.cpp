@@ -2,45 +2,7 @@
 #include <string>
 #include <chrono>
 #include <arm_neon.h>
-
-
-extern "C" JNIEXPORT jstring JNICALL
-Java_com_shinplest_neonintrinsic_MainActivity_stringFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
-    // Ramp length and number of trials
-    const int rampLength = 1024;
-    const int trials = 10000;
-// Generate two input vectors
-// (0, 1, ..., rampLength - 1)
-// (100, 101, ..., 100 + rampLength-1) auto ramp1 = generateRamp(0, rampLength); auto ramp2 = generateRamp(100, rampLength);
-// Without NEON intrinsics
-// Invoke dotProduct and measure performance
-    int lastResult = 0;
-    auto start = now();
-    for (int i = 0; i < trials; i++) {
-        lastResult = dotProduct(ramp1, ramp2, rampLength);
-        auto elapsedTime = msElapsedTime(start);
-// With NEON intrinsics
-    }
-// Invoke dotProductNeon and measure performance int lastResultNeon = 0;
-    start = now();
-    for (int i = 0; i < trials; i++) {
-        lastResultNeon = dotProductNeon(ramp1, ramp2, rampLength);
-        auto elapsedTimeNeon = msElapsedTime(start);
-
-        // Clean up
-        delete ramp1, ramp2;
-// Display results
-        std::string resultsString =
-                "----==== NO NEON ====----\nResult: " + to_string(lastResult) + "\nElapsed time: " +
-                to_string((int) elapsedTime) + " ms"
-                + "\n\n----==== NEON ====----\n"
-    }
-    +"Result: " + to_string(lastResultNeon)
-    + "\nElapsed time: " + to_string((int) elapsedTimeNeon) + " ms";
-    return env->NewStringUTF(resultsString.c_str());
-}
+#include <bitset>
 
 short *generateRamp(short startValue, short len) {
     short *ramp = new short[len];
@@ -82,3 +44,40 @@ int dotProductNeon(short *vector1, short *vector2, short len) {
     for (short i = 0; i < transferSize; i++) { result += partialSums[i]; }
     return result;
 }
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_shinplest_neonintrinsic_MainActivity_stringFromJNI(
+        JNIEnv *env,
+        jobject /* this */) {
+    const int rampLength = 1024;
+    const int trials = 10000;
+
+    auto ramp1 = generateRamp(0, rampLength);
+    auto ramp2 = generateRamp(100, rampLength);
+
+    int lastResult = 0;
+
+    auto start = now();
+    for (int i = 0; i < trials; i++) {
+        lastResult = dotProduct(ramp1, ramp2, rampLength);
+    }
+    auto elapsedTime = msElapsedTime(start);
+    int lastResultNeon = 0;
+
+    start = now();
+    for (int i = 0; i < trials; i++) {
+        lastResultNeon = dotProductNeon(ramp1, ramp2, rampLength);
+    }
+    auto elapsedTimeNeon = msElapsedTime(start);
+
+    delete ramp1, ramp2;
+    std::string resultsString =
+            "----==== NO NEON ====----\nResult: " + std::to_string(lastResult) + "\nElapsed time: " +
+            std::to_string((int) elapsedTime) + " ms"
+            + "\n\n----==== NEON ====----\n"
+            + "Result: " +
+            std::to_string(lastResultNeon)
+            + "\nElapsed time: " + std::to_string((int) elapsedTimeNeon) + " ms";
+    return env->NewStringUTF(resultsString.c_str());
+}
+
